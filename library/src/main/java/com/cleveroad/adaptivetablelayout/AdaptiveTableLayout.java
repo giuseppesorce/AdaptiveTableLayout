@@ -31,8 +31,8 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
     private static final String EXTRA_STATE_SUPER = "EXTRA_STATE_SUPER";
     private static final String EXTRA_STATE_VIEW_GROUP = "EXTRA_STATE_VIEW_GROUP";
 
-    private static final int SHADOW_THICK = 20;
-    private static final int SHADOW_HEADERS_THICK = 10;
+    private static final int SHADOW_THICK = 3;
+    private static final int SHADOW_HEADERS_THICK = 3;
 
     /**
      * Matrix with item view holders
