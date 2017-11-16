@@ -114,6 +114,7 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
      */
     @Nullable
     private TableInstanceSaver mSaver;
+    private boolean hasData= false;
 
     public AdaptiveTableLayout(Context context) {
         super(context);
@@ -304,6 +305,7 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
             // register notify callbacks
             mAdapter.registerDataSetObserver(this);
             adapter.registerDataSetObserver(new DataSetObserverProxy(mAdapter));
+            hasData= adapter.getColumnCount() >0 && adapter.getRowCount() >0;
         } else {
             // remove adapter
             mAdapter = null;
@@ -333,6 +335,7 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
         mAdapter = adapter;
 
         if (mAdapter != null) {
+            hasData= adapter.getColumnCount() >0 && adapter.getRowCount() >0;
             mAdapter.registerDataSetObserver(this);
         }
 
@@ -375,64 +378,67 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
     @Override
     public void scrollBy(int x, int y) {
         // block scroll one axle
-        int tempX = mState.isRowDragging() ? 0 : x;
-        int tempY = mState.isColumnDragging() ? 0 : y;
+        if(hasDataApter()) {
 
-        int diffX = tempX;
-        int diffY = tempY;
+            int tempX = mState.isRowDragging() ? 0 : x;
+            int tempY = mState.isColumnDragging() ? 0 : y;
 
-        int shadowShiftX = mManager.getColumnCount() * mSettings.getCellMargin();
-        int shadowShiftY = mManager.getRowCount() * mSettings.getCellMargin();
+            int diffX = tempX;
+            int diffY = tempY;
 
-        long maxX = mManager.getFullWidth() + shadowShiftX;
-        long maxY = mManager.getFullHeight() + shadowShiftY;
+            int shadowShiftX = mManager.getColumnCount() * mSettings.getCellMargin();
+            int shadowShiftY = mManager.getRowCount() * mSettings.getCellMargin();
 
-        if (mState.getScrollX() + tempX <= 0) {
-            // scroll over view to the left
-            diffX = mState.getScrollX();
-            mState.setScrollX(0);
-        } else if (mSettings.getLayoutWidth() > maxX) {
-            // few items and we have free space.
-            diffX = 0;
-            mState.setScrollX(0);
-        } else if (mState.getScrollX() + mSettings.getLayoutWidth() + tempX > maxX) {
-            // scroll over view to the right
-            diffX = (int) (maxX - mState.getScrollX() - mSettings.getLayoutWidth());
+            long maxX = mManager.getFullWidth() + shadowShiftX;
+            long maxY = mManager.getFullHeight() + shadowShiftY;
 
-            mState.setScrollX(mState.getScrollX() + diffX);
-        } else {
-            mState.setScrollX(mState.getScrollX() + tempX);
-        }
+            if (mState.getScrollX() + tempX <= 0) {
+                // scroll over view to the left
+                diffX = mState.getScrollX();
+                mState.setScrollX(0);
+            } else if (mSettings.getLayoutWidth() > maxX) {
+                // few items and we have free space.
+                diffX = 0;
+                mState.setScrollX(0);
+            } else if (mState.getScrollX() + mSettings.getLayoutWidth() + tempX > maxX) {
+                // scroll over view to the right
+                diffX = (int) (maxX - mState.getScrollX() - mSettings.getLayoutWidth());
 
-        if (mState.getScrollY() + tempY <= 0) {
-            // scroll over view to the top
-            diffY = mState.getScrollY();
-            mState.setScrollY(0);
-        } else if (mSettings.getLayoutHeight() > maxY) {
-            // few items and we have free space.
-            diffY = 0;
-            mState.setScrollY(0);
-        } else if (mState.getScrollY() + mSettings.getLayoutHeight() + tempY > maxY) {
-            // scroll over view to the bottom
-            diffY = (int) (maxY - mState.getScrollY() - mSettings.getLayoutHeight());
-            mState.setScrollY(mState.getScrollY() + diffY);
-        } else {
-            mState.setScrollY(mState.getScrollY() + tempY);
-        }
+                mState.setScrollX(mState.getScrollX() + diffX);
+            } else {
+                mState.setScrollX(mState.getScrollX() + tempX);
+            }
 
-        if (diffX == 0 && diffY == 0) {
-            return;
-        }
+            if (mState.getScrollY() + tempY <= 0) {
+                // scroll over view to the top
+                diffY = mState.getScrollY();
+                mState.setScrollY(0);
+            } else if (mSettings.getLayoutHeight() > maxY) {
+                // few items and we have free space.
+                diffY = 0;
+                mState.setScrollY(0);
+            } else if (mState.getScrollY() + mSettings.getLayoutHeight() + tempY > maxY) {
+                // scroll over view to the bottom
+                diffY = (int) (maxY - mState.getScrollY() - mSettings.getLayoutHeight());
+                mState.setScrollY(mState.getScrollY() + diffY);
+            } else {
+                mState.setScrollY(mState.getScrollY() + tempY);
+            }
 
-        if (mAdapter != null) {
-            // refresh views
-            recycleViewHolders();
-            mVisibleArea.set(mState.getScrollX(),
-                    mState.getScrollY(),
-                    mState.getScrollX() + mSettings.getLayoutWidth(),
-                    mState.getScrollY() + mSettings.getLayoutHeight());
-            addViewHolders(mVisibleArea);
-            refreshViewHolders();
+            if (diffX == 0 && diffY == 0) {
+                return;
+            }
+
+            if (mAdapter != null) {
+                // refresh views
+                recycleViewHolders();
+                mVisibleArea.set(mState.getScrollX(),
+                        mState.getScrollY(),
+                        mState.getScrollX() + mSettings.getLayoutWidth(),
+                        mState.getScrollY() + mSettings.getLayoutHeight());
+                addViewHolders(mVisibleArea);
+                refreshViewHolders();
+            }
         }
     }
 
@@ -1383,18 +1389,20 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
         // simple click event
-        ViewHolder viewHolder = getViewHolderByPosition((int) e.getX(), (int) e.getY());
-        if (viewHolder != null) {
-            OnItemClickListener onItemClickListener = mAdapter.getOnItemClickListener();
-            if (onItemClickListener != null) {
-                if (viewHolder.getItemType() == ViewHolderType.ITEM) {
-                    onItemClickListener.onItemClick(viewHolder.getRowIndex(), getBindColumn(viewHolder.getColumnIndex()));
-                } else if (viewHolder.getItemType() == ViewHolderType.ROW_HEADER) {
-                    onItemClickListener.onRowHeaderClick(viewHolder.getRowIndex());
-                } else if (viewHolder.getItemType() == ViewHolderType.COLUMN_HEADER) {
-                    onItemClickListener.onColumnHeaderClick(getBindColumn(viewHolder.getColumnIndex()));
-                } else {
-                    onItemClickListener.onLeftTopHeaderClick();
+        if(hasDataApter()) {
+            ViewHolder viewHolder = getViewHolderByPosition((int) e.getX(), (int) e.getY());
+            if (viewHolder != null) {
+                OnItemClickListener onItemClickListener = mAdapter.getOnItemClickListener();
+                if (onItemClickListener != null) {
+                    if (viewHolder.getItemType() == ViewHolderType.ITEM) {
+                        onItemClickListener.onItemClick(viewHolder.getRowIndex(), getBindColumn(viewHolder.getColumnIndex()));
+                    } else if (viewHolder.getItemType() == ViewHolderType.ROW_HEADER) {
+                        onItemClickListener.onRowHeaderClick(viewHolder.getRowIndex());
+                    } else if (viewHolder.getItemType() == ViewHolderType.COLUMN_HEADER) {
+                        onItemClickListener.onColumnHeaderClick(getBindColumn(viewHolder.getColumnIndex()));
+                    } else {
+                        onItemClickListener.onLeftTopHeaderClick();
+                    }
                 }
             }
         }
@@ -1405,60 +1413,68 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
     public void onLongPress(MotionEvent e) {
         // prepare drag and drop
         // search view holder by x, y
-        ViewHolder viewHolder = getViewHolderByPosition((int) e.getX(), (int) e.getY());
-        if (viewHolder != null) {
+        if(hasDataApter()) {
+            ViewHolder viewHolder = getViewHolderByPosition((int) e.getX(), (int) e.getY());
+            if (viewHolder != null) {
 
-            if (!mSettings.isDragAndDropEnabled()) {
-                checkLongPressForItemAndFirstHeader(viewHolder);
-                return;
-            }
-            // save start dragging touch position
-            mDragAndDropPoints.setStart((int) (mState.getScrollX() + e.getX()), (int) (mState.getScrollY() + e.getY()));
-            if (viewHolder.getItemType() == ViewHolderType.COLUMN_HEADER) {
-                // dragging column header
-                mState.setRowDragging(false, viewHolder.getRowIndex());
-                mState.setColumnDragging(true, viewHolder.getColumnIndex());
+                if (!mSettings.isDragAndDropEnabled()) {
+                    checkLongPressForItemAndFirstHeader(viewHolder);
+                    return;
+                }
+                // save start dragging touch position
+                mDragAndDropPoints.setStart((int) (mState.getScrollX() + e.getX()), (int) (mState.getScrollY() + e.getY()));
+                if (viewHolder.getItemType() == ViewHolderType.COLUMN_HEADER) {
+                    // dragging column header
+                    mState.setRowDragging(false, viewHolder.getRowIndex());
+                    mState.setColumnDragging(true, viewHolder.getColumnIndex());
 
-                // set dragging flags to column's view holder
-                setDraggingToColumn(viewHolder.getColumnIndex(), true);
+                    // set dragging flags to column's view holder
+                    setDraggingToColumn(viewHolder.getColumnIndex(), true);
 
-                mShadowHelper.removeColumnsHeadersShadow(this);
+                    mShadowHelper.removeColumnsHeadersShadow(this);
 
-                mShadowHelper.addLeftShadow(this);
-                mShadowHelper.addRightShadow(this);
+                    mShadowHelper.addLeftShadow(this);
+                    mShadowHelper.addRightShadow(this);
 
-                // update view
-                refreshViewHolders();
+                    // update view
+                    refreshViewHolders();
 
-            } else if (viewHolder.getItemType() == ViewHolderType.ROW_HEADER) {
-                // dragging column header
-                mState.setRowDragging(true, viewHolder.getRowIndex());
-                mState.setColumnDragging(false, viewHolder.getColumnIndex());
+                } else if (viewHolder.getItemType() == ViewHolderType.ROW_HEADER) {
+                    // dragging column header
+                    mState.setRowDragging(true, viewHolder.getRowIndex());
+                    mState.setColumnDragging(false, viewHolder.getColumnIndex());
 
-                // set dragging flags to row's view holder
-                setDraggingToRow(viewHolder.getRowIndex(), true);
+                    // set dragging flags to row's view holder
+                    setDraggingToRow(viewHolder.getRowIndex(), true);
 
-                mShadowHelper.removeRowsHeadersShadow(this);
+                    mShadowHelper.removeRowsHeadersShadow(this);
 
-                mShadowHelper.addTopShadow(this);
-                mShadowHelper.addBottomShadow(this);
+                    mShadowHelper.addTopShadow(this);
+                    mShadowHelper.addBottomShadow(this);
 
-                // update view
-                refreshViewHolders();
+                    // update view
+                    refreshViewHolders();
 
-            } else {
-                checkLongPressForItemAndFirstHeader(viewHolder);
+                } else {
+                    checkLongPressForItemAndFirstHeader(viewHolder);
+                }
             }
         }
     }
 
+    private boolean hasDataApter() {
+        return hasData;
+    }
+
     private void checkLongPressForItemAndFirstHeader(ViewHolder viewHolder) {
-        OnItemLongClickListener onItemClickListener = mAdapter.getOnItemLongClickListener();
-        if (onItemClickListener != null) {
-            if (viewHolder.getItemType() == ViewHolderType.ITEM) {
-                onItemClickListener.onItemLongClick(viewHolder.getRowIndex(), viewHolder.getColumnIndex());
-            } else if (viewHolder.getItemType() == ViewHolderType.FIRST_HEADER) {
-                onItemClickListener.onLeftTopHeaderLongClick();
+        if(hasDataApter()) {
+            OnItemLongClickListener onItemClickListener = mAdapter.getOnItemLongClickListener();
+            if (onItemClickListener != null) {
+                if (viewHolder.getItemType() == ViewHolderType.ITEM) {
+                    onItemClickListener.onItemLongClick(viewHolder.getRowIndex(), viewHolder.getColumnIndex());
+                } else if (viewHolder.getItemType() == ViewHolderType.FIRST_HEADER) {
+                    onItemClickListener.onLeftTopHeaderLongClick();
+                }
             }
         }
     }
@@ -1613,7 +1629,7 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
 
     @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        if (!mState.isDragging()) {
+        if (!mState.isDragging() && hasDataApter()) {
             // simple scroll....
             if (!mScrollerRunnable.isFinished()) {
                 mScrollerRunnable.forceFinished();
@@ -1625,7 +1641,7 @@ public class AdaptiveTableLayout extends ViewGroup implements ScrollHelper.Scrol
 
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        if (!mState.isDragging()) {
+        if (!mState.isDragging() && hasDataApter()) {
             // simple fling
             mScrollerRunnable.start(
                     mState.getScrollX(), mState.getScrollY(),

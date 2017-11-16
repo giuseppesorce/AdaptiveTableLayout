@@ -16,12 +16,12 @@ public class SampleActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sample);
 
-        if (savedInstanceState == null) {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .add(R.id.container, CsvPickerFragment.newInstance(), CsvPickerFragment.class.getSimpleName())
-                    .commit();
-        }
+//        if (savedInstanceState == null) {
+//            getSupportFragmentManager()
+//                    .beginTransaction()
+//                    .add(R.id.container, CsvPickerFragment.newInstance(), CsvPickerFragment.class.getSimpleName())
+//                    .commit();
+//        }
     }
 
     @Override
@@ -29,11 +29,11 @@ public class SampleActivity extends AppCompatActivity implements
         if (fileName != null && !fileName.isEmpty()) {
             File file = new File(fileName);
             if (file.exists() && fileName.endsWith(".csv")) {
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.container, TableLayoutFragment.newInstance(fileName), CsvPickerFragment.class.getSimpleName())
-                        .addToBackStack(CsvPickerFragment.class.getSimpleName())
-                        .commit();
+//                getSupportFragmentManager()
+//                        .beginTransaction()
+//                        .replace(R.id.container, TableLayoutFragment.newInstance(fileName), CsvPickerFragment.class.getSimpleName())
+//                        .addToBackStack(CsvPickerFragment.class.getSimpleName())
+//                        .commit();
             } else {
                 Toast.makeText(this, R.string.not_csv_file_error, Toast.LENGTH_SHORT).show();
             }
