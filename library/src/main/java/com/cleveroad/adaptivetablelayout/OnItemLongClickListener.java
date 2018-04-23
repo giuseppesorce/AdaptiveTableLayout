@@ -13,4 +13,11 @@ public interface OnItemLongClickListener {
      * Long click left top item callback
      */
     void onLeftTopHeaderLongClick();
+
+    /**
+     * Click row header item callback
+     *
+     * @param row clicked row header
+     */
+    void onRowHeaderLongClick(int row);
 }

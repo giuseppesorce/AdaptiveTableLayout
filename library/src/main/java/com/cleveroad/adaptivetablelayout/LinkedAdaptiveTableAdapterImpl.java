@@ -94,6 +94,14 @@ class LinkedAdaptiveTableAdapterImpl<VH extends ViewHolder> extends LinkedAdapti
     }
 
     @Override
+    public void onRowHeaderLongClick(int row) {
+        OnItemLongClickListener innerListener = mInner.getOnItemLongClickListener();
+        if (innerListener != null) {
+            innerListener.onRowHeaderLongClick(mIsSolidRowHeader ? rowIndexToId(row) : row);
+        }
+    }
+
+    @Override
     public void onColumnHeaderClick(int column) {
         OnItemClickListener innerListener = mInner.getOnItemClickListener();
         if (innerListener != null) {
